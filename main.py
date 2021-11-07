@@ -1,10 +1,17 @@
+from time import sleep
 import picamera  # kutuphane import edildi
 from google.cloud import vision
 import io
 
 client = vision.ImageAnnotatorClient()  # client objesi uzerinden api kullanilacak
 
-
+def compareStrings(labeş):
+    list = {"PET", "pet", "Pet Bottle", "Bottle", "Water Bottle", "Bottle", "Bottled Water","Plastic Bottle"}
+    for string in list:
+        if string == "labels":
+            return 1
+        else:
+            return 0
 def localize_objects(path):
     # path:image.jpg'nin konumu(aynı klasörde olmalı)
     with open(path, 'rb') as image_file:  # image'i aciyoruz
@@ -35,15 +42,14 @@ def detect_properties(path):
         f.write('green: {}'.format(color.color.green))
         f.write('blue: {}'.format(color.color.blue))
         f.write('alpha: {}'.format(color.color.alpha))
-
-    if response.error.message:
-        print("An error occured!")
     f.close()
-
 
 def takephoto():
     camera = picamera.PiCamera()
-    camera.capture('image.jpg')  # resim dosyasinin ismi belirlendi
+    camera.start_preview()
+    sleep(5)
+    camera.capture('/home/pi/Desktop/image.jpg') #desktop üzerinde kod calistirilmali
+    camera.stop_preview()
 
 
 def writefile_logos(logos):  # logo isimlerini dosyaya yazma fonksiyonu
@@ -59,18 +65,21 @@ def writefile_labels(labels):  # etiketleri dosyaya yazma fonksiyonu
             print >> f, label.description
     f.close()
 
-
 def main():
     takephoto()  # resim cekildi
     with open('image.jpg', 'rb') as image_file:  # resim dosyasi acildi
         content = image_file.read()  # dosya icerigi contente atandi
     image = vision.types.Image(content=content)
-    response1 = client.logo_detection(image=image)  # api uzerinden logo cevabi alindi ve response1 objesine atandı
     response = client.label_detection(image=image)  # api uzerinden etiket cevabi alindi ve response objesine atandı
     labels = response.label_annotations  # response objesinin label annotations fonksiyonu kullanilarak etiketler liste olarak cekildi
+    if compareStrings(labels) == 0: # labellar karsilastiriliyor
+        return 0
+    response1 = client.logo_detection(image=image)  # api uzerinden logo cevabi alindi ve response1 objesine atandı
     logos = response1.logo_annotations  # response objesinin logo annotations fonksiyonu kullanilarak logo isimleri liste olarak cekildi
     writefile_logos(logos)
     writefile_labels(labels)
     detect_properties('image.jpg')
     image_file.close()
+
+
     main()

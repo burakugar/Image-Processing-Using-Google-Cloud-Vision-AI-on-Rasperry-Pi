@@ -5,7 +5,7 @@ import io
 
 client = vision.ImageAnnotatorClient()  # client objesi uzerinden api kullanilacak
 
-def compareStrings(labeş):
+def compareStrings(label):
     list = {"PET", "pet", "Pet Bottle", "Bottle", "Water Bottle", "Bottle", "Bottled Water","Plastic Bottle"}
     for string in list:
         if string == "labels":
